@@ -42,14 +42,11 @@ app.get("/check-link", async (req, res) => {
     const sslWarning = await checkSSL(url);
     if (sslWarning) warnings.push({ reason: sslWarning });
 
-    const redirectWarning = await checkForRedirects(url);
-    if (redirectWarning) warnings.push({ reason: redirectWarning });
-
-    const adWarning = await checkForAds(url);
-    if (adWarning) warnings.push({ reason: adWarning });
-
     const httpWarning = await checkHttpStatus(url);
     if (httpWarning) warnings.push({ reason: httpWarning});
+
+    const malwareWarning = await checkForMalware(url);
+    if (malwareWarning) warnings.push({ reason: malwareWarning});
 
     res.json({ status: warnings.length > 0 ? "warning" : "working", warnings });
 });
@@ -105,41 +102,6 @@ async function checkForMalware(url) {
     }
 }
 
-async function checkForAds(url) {
-    try {
-        const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-setuid-sandbox"] });
-        const page = await browser.newPage();
-        await page.goto(url, { waitUntil: "load", timeout: 30000 });
-        const ads = await page.evaluate(() => document.querySelectorAll("iframe, div[id*=\"ad\"], [class*=\"ad\"]").length);
-        await browser.close();
-        return ads > 10 ? "High number of ads detected" : null;
-    } catch (error) {
-        return null;
-    }
-}
-
-async function checkForRedirects(url) {
-    try {
-        const browser = await puppeteer.launch({ headless: "new" });
-        const page = await browser.newPage();
-        let redirects = 0;
-
-        page.on("response", (response) => {
-            if (response.status() >= 300 && response.status() < 400) {
-                redirects++;
-            }
-        });
-
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 10000 });
-        await browser.close();
-
-        return redirects > 5 ? "Excessive Redirects Detected" : null;
-    } catch (error) {
-        return "Failed to check redirects.";
-    }
-}
-
-
 async function checkHttpStatus(url) {
     try {
         const response = await fetch(url, { method: "HEAD" });
@@ -149,31 +111,3 @@ async function checkHttpStatus(url) {
     }
 }
 
-async function testPuppeteer() {
-    try {
-        console.log("Launching Puppeteer...");
-        const browser = await puppeteer.launch({
-            headless: true,
-            args: [
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-accelerated-2d-canvas",
-                "--no-first-run",
-                "--no-zygote",
-                "--single-process",
-                "--disable-gpu"
-            ]
-        });
-        console.log("Chromium path:", puppeteer.executablePath());
-
-        const page = await browser.newPage();
-        await page.goto("https://www.google.com", { waitUntil: "load", timeout: 10000 });
-        console.log("Successfully loaded page.");
-        await browser.close();
-    } catch (error) {
-        console.error("Puppeteer failed:", error);
-    }
-}
-
-testPuppeteer();
