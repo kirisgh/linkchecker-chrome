@@ -3,7 +3,6 @@ const cors = require("cors");
 const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 const tls = require("tls");
 const https = require("https");
-const puppeteer = require("puppeteer");
 require("dotenv").config();
 
 const app = express();
