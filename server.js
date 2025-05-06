@@ -48,6 +48,9 @@ app.get("/check-link", async (req, res) => {
     const adWarning = await checkForAds(url);
     if (adWarning) warnings.push({ reason: adWarning });
 
+    const httpWarning = await checkHttpStatus(url);
+    if (httpWarning) warnings.push({ reason: httpWarning});
+
     res.json({ status: warnings.length > 0 ? "warning" : "working", warnings });
 });
 
@@ -148,11 +151,29 @@ async function checkHttpStatus(url) {
 
 async function testPuppeteer() {
     try {
-        const browser = await puppeteer.launch({ headless: "new" });
+        console.log("Launching Puppeteer...");
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-accelerated-2d-canvas",
+                "--no-first-run",
+                "--no-zygote",
+                "--single-process",
+                "--disable-gpu"
+            ]
+        });
+        console.log("Chromium path:", puppeteer.executablePath());
+
         const page = await browser.newPage();
         await page.goto("https://www.google.com", { waitUntil: "load", timeout: 10000 });
+        console.log("Successfully loaded page.");
         await browser.close();
-    } catch (error) {}
+    } catch (error) {
+        console.error("Puppeteer failed:", error);
+    }
 }
 
 testPuppeteer();

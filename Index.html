@@ -205,7 +205,7 @@ button:hover {
       resultDiv.style.display = "none";
 
       setTimeout(() => {
-        fetch(`http://localhost:3000/check-link?url=${encodeURIComponent(url)}`)
+        fetch(`https://linkchecker-new.onrender.com/check-link?url=${encodeURIComponent(url)}`)
           .then(response => response.json())
           .then(data => {
             let warningText = "";
